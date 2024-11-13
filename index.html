@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Bot Deployment</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    header {
+      background-color: #6200ea;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      width: 100%;
+    }
+
+    button {
+      background-color: #6200ea;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #4500a3;
+    }
+
+    .bot-list {
+      margin-top: 20px;
+    }
+
+    .bot-item {
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .bot-actions button {
+      margin-left: 5px;
+      padding: 5px 10px;
+      background-color: #ff1744;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .bot-actions button:hover {
+      background-color: #d50000;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Custom Bot Deployment</h1>
+    <p>Deploy your WhatsApp bots easily!</p>
+  </header>
+  
+  <div class="container">
+    <form id="deployForm">
+      <h2>Deploy a New Bot</h2>
+      <label for="repo">GitHub Repository Link</label>
+      <input type="url" id="repo" placeholder="Enter the GitHub repo link" required>
+      
+      <label for="sessionId">Session ID</label>
+      <input type="text" id="sessionId" placeholder="Enter your Session ID" required>
+      
+      <label for="name">Bot Name</label>
+      <input type="text" id="name" placeholder="Enter your bot name" required>
+      
+      <button type="submit">Deploy Bot</button>
+    </form>
+
+    <div id="botList" class="bot-list">
+      <h2>Deployed Bots</h2>
+      <!-- Bots will appear here -->
+    </div>
+  </div>
+
+  <script>
+    const backendURL = "https://deployment-371a.onrender.com";
+
+    // Deploy bot form submission
+    document.getElementById('deployForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const repo = document.getElementById('repo').value;
+      const sessionId = document.getElementById('sessionId').value;
+      const name = document.getElementById('name').value;
+
+      try {
+        const response = await fetch(`${backendURL}/deploy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ repo, sessionId, name }),
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          alert('Bot deployed successfully!');
+          loadBots();
+        } else {
+          alert(`Error: ${result.error}`);
+        }
+      } catch (err) {
+        alert('An error occurred. Please try again.');
+      }
+    });
+
+    // Load all deployed bots
+    async function loadBots() {
+      try {
+        const response = await fetch(`${backendURL}/bots`);
+        const bots = await response.json();
+
+        const botList = document.getElementById('botList');
+        botList.innerHTML = '<h2>Deployed Bots</h2>';
+
+        bots.forEach(bot => {
+          const botItem = document.createElement('div');
+          botItem.className = 'bot-item';
+
+          botItem.innerHTML = `
+            <span><strong>${bot.name}</strong> (Status: ${bot.status})</span>
+            <div class="bot-actions">
+              <button onclick="stopBot('${bot.name}')">Stop Bot</button>
+            </div>
+          `;
+
+          botList.appendChild(botItem);
+        });
+      } catch (err) {
+        console.error('Error fetching bots:', err);
+      }
+    }
+
+    // Stop a bot
+    async function stopBot(name) {
+      try {
+        const response = await fetch(`${backendURL}/stop`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          alert(`Bot "${name}" stopped successfully.`);
+          loadBots();
+        } else {
+          alert(`Error: ${result.error}`);
+        }
+      } catch (err) {
+        alert('An error occurred. Please try again.');
+      }
+    }
+
+    // Load bots on page load
+    loadBots();
+  </script>
+</body>
+</html>
